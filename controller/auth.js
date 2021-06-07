@@ -21,6 +21,7 @@ const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 function validateToken(callback) {
     var cognitoUser = userPool.getCurrentUser();
     console.log('logged cognito user:', cognitoUser);
+    var validationResult = "";
     
     request({
         url: `https://cognito-idp.${pool_region}.amazonaws.com/${poolData.UserPoolId}/.well-known/jwks.json`,
@@ -43,6 +44,7 @@ function validateToken(callback) {
             var decodedJwt = jwt.decode(localStorage.getItem('accessToken'), {complete: true});
             if (!decodedJwt) {
                 console.log("Not a valid JWT token");
+                validationResult="Invalid Token";
                 return;
             }
 
@@ -50,22 +52,26 @@ function validateToken(callback) {
             var pem = pems[kid];
             if (!pem) {
                 console.log('Invalid token');
+                validationResult="Invalid Token";
                 return;
             }
 
             jwt.verify(localStorage.getItem('accessToken'), pem, function(err, payload) {
                 if(err) {
                     console.log("Invalid Token.");
+                    validationResult="Invalid Token";
                 } else {
                     console.log("Valid Token.");
                     console.log(payload);
+                    validationResult="Valid Token";
                 }
             });
         } else {
             console.log("Error! Unable to download JWKs");
+            validationResult="Error! Unable to download JWKs";
         }
 
-        callback("validation end");
+        callback(validationResult);
     });
 }
 
@@ -116,12 +122,14 @@ function logout(callback) {
 function refreshToken(callback) {    
     var cognitoUser = userPool.getCurrentUser();
     console.log('logged cognito user:', cognitoUser);
+    var refreshResult="";
    
     const RefreshToken = new AmazonCognitoIdentity.CognitoRefreshToken({RefreshToken: localStorage.getItem('refreshToken')});
     
     cognitoUser.refreshSession(RefreshToken, (err, session) => {
         if (err) {
             console.log(err);
+            refreshResult=err;
         } else {
             let retObj = {
                 "access_token": session.accessToken.jwtToken,
@@ -129,10 +137,10 @@ function refreshToken(callback) {
                 "refresh_token": session.refreshToken.token,
             }
             console.log(retObj);
+            refreshResult = "refreshed";
         }
+        callback(refreshResult);
     });
-
-    callback('done');
 }
 
 module.exports={

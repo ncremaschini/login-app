@@ -28,7 +28,7 @@ router.post("/authActions", function (req, res, next) {
   if (req.body.authaction && req.body.authaction == "logout") {
     auth.logout(function (logoutResult) {
       console.log("logout result", logoutResult);
-
+      
       if (logoutResult) {
         res.render("index", { error: false });
       } else {
@@ -38,10 +38,13 @@ router.post("/authActions", function (req, res, next) {
   }else if(req.body.authaction && req.body.authaction == "refresh"){
     auth.refreshToken(function (refreshResult) {
       console.log("refresh result", refreshResult);
+      res.render("users", { operation_executed: true, operation: req.body.authaction, operation_result: refreshResult });
+
     });
   }else if(req.body.authaction && req.body.authaction == "validate"){
     auth.validateToken(function (validateResult) {
       console.log("validate result", validateResult);
+      res.render("users", { operation_executed: true, operation: req.body.authaction, operation_result: validateResult });
     });
   }
 });
